@@ -42,12 +42,10 @@ function print_chart($chart, $from, $till, $type, $holid)
     $end_date = $till;
     $dt = new DateTime($date);
     $d = $dt->format('Y-m-d'); //date		
-	echo "<br>";
-	echo "<b>Normal Classes</b><br/>";
-    echo "<br>";
-	echo "<TABLE borderColor=#000000 cellSpacing=0 cellPadding=6 border=2>\n";
+
+    echo "<TABLE borderColor=#000000 cellSpacing=0 cellPadding=6 border=2>\n";
     echo "<th>DATE</th><th>DAY</th><th>START TIME</th><th>END TIME</th><th>TYPE</th><th>ENTRY</th><th>STATUS</th>";
-	
+
     while (strtotime($date) <= strtotime($end_date)) 
     {
         $dt = new DateTime($date);
@@ -146,32 +144,39 @@ function print_chart($chart, $from, $till, $type, $holid)
         //if any extra classes arranged
         //no holiday check
         //because extra class can be on any holiday also
-        if ($chart[$d][8] == 1) 
+        if ($chart[$d][8] > 0) 
         {
-            if ($chart[$d][10][6] == $type || $type == "Complete") 
-            {
-                /*echo "<tr>";
-                echo
-                "<td>" . $chart[$d][10][0] . "</td> " .
-                "<td>" . $chart[$d][10][1] . "</td> " .
-                "<td>" . $chart[$d][10][2] . "</td> " .
-                "<td>" . $chart[$d][10][3] . "</td> " .
-                "<td>" . $chart[$d][10][4] . "</td> " .
-                "<td>" . $chart[$d][10][5] . "</td> " .
-                "<td>" . $chart[$d][10][6] . "</td> ";
-                echo "</tr>";*/
+			$count = 0;
+			$num = $chart[$d][8] ;
+			while ($num != 0)
+			{
+				if ($chart[$d][10][$count][6] == $type || $type == "Complete") 
+				{
+					echo "<tr>";
+					echo
+					"<td>" . $chart[$d][10][$count][0] . "</td> " .
+					"<td>" . $chart[$d][10][$count][1] . "</td> " .
+					"<td>" . $chart[$d][10][$count][2] . "</td> " .
+					"<td>" . $chart[$d][10][$count][3] . "</td> " .
+					"<td>" . $chart[$d][10][$count][4] . "</td> " .
+					"<td>" . $chart[$d][10][$count][5] . "</td> " .
+					"<td>" . $chart[$d][10][$count][6] . "</td> ";
+					echo "</tr>";
 
-                if ($chart[$d][10][6] == "Absent")
-                    $absent_days++;
-                if ($chart[$d][10][6] == "Present")
-                    $present_days++;
-            }
+					if ($chart[$d][10][$count][6] == "Absent")
+						$absent_days++;
+					if ($chart[$d][10][$count][6] == "Present")
+						$present_days++;
+				}
+				$num = $num - 1 ;
+				$count = $count + 1 ;
+			}
         }
 
         //date increment
         $date = date("Y-m-d", strtotime("+1 day", strtotime($date)));
-    }
     
+    }
     echo "</TABLE></HTML>";
     echo "<br>";
     echo "<br>";
@@ -353,12 +358,10 @@ function report($con, $rollno, $c_id, $from, $till, $type ,$schedule , $holid , 
 
         // End date
         $end_date = $till;
-		
-		echo "<br/><b>Extra Classes</b><br/><table border=1 padding=5px>";
+
+
         //finding total expected classes
-        echo "<tr><th>DATE</th><th>DAY</th><th>START TIME</th><th>END TIME</th><th>TYPE</th><th>ENTRY</th><th>STATUS</th></tr>";
-		echo "<br>";
-		while (strtotime($date) <= strtotime($end_date)) {
+        while (strtotime($date) <= strtotime($end_date)) {
             //outer loop goes from '$from' to '$till' checking for classes and timestamp in $ts
             //in ech outer loop inner loop goes from '$ts[0]' to '$ts[$ts_length - 1]
             //if students entry time in '$ts' is between scheduled classes then assign present 
@@ -370,8 +373,7 @@ function report($con, $rollno, $c_id, $from, $till, $type ,$schedule , $holid , 
             //counter
             $i = 0;  
                           
-            //will enter the loop only if student is present atleast once   
-			
+            //will enter the loop only if student is present atleast once           
             while ( $i < $ts_length ) 
             {
                 
@@ -470,11 +472,13 @@ function report($con, $rollno, $c_id, $from, $till, $type ,$schedule , $holid , 
                 
                 $result = mysqli_query($con, $query) or die("Error: " . mysqli_error($con));
 
-				
-                while ($row = mysqli_fetch_array($result)) 
+				$extra = array();
+				$count = 0 ;
+                $chart[$d][8] = 0;
+				while ($row = mysqli_fetch_array($result)) 
                 {
                 
-                $chart[$d][8] = 1;
+                
 
                 $chart2[$d][0] = $d;
                 $chart2[$d][1] = $day;
@@ -491,12 +495,14 @@ function report($con, $rollno, $c_id, $from, $till, $type ,$schedule , $holid , 
                     $chart2[$d][5] = $user_time;
                     $chart2[$d][6] = "Present";
                 } 
-                echo "<tr><td>".$chart2[$d][0]."</td><td>".$chart2[$d][1]."</td><td>".$chart2[$d][2]."</td><td>".$chart2[$d][3]."</td><td>".$chart2[$d][4]."</td><td>".$chart2[$d][5]."</td><td>".$chart2[$d][6]."</td></tr>";
-				
-                $chart[$d][10] = array($chart2[$d][0], $chart2[$d][1], $chart2[$d][2], $chart2[$d][3], $chart2[$d][4], $chart2[$d][5], $chart2[$d][6]);
                 
+                $extra[$count] = array($chart2[$d][0], $chart2[$d][1], $chart2[$d][2], $chart2[$d][3], $chart2[$d][4], $chart2[$d][5], $chart2[$d][6]);
+                
+				$count = $count + 1 ;
                 
             }
+				$chart[$d][10] = $extra ;
+				$chart[$d][8]  = $count ;
                 //next index of $ts[]
                 $i = $i + 1;
             }//checking for extra finished
@@ -524,8 +530,7 @@ function report($con, $rollno, $c_id, $from, $till, $type ,$schedule , $holid , 
                 $chart2[$d][4] = "Extra";
                 $chart2[$d][5] = "";
                 $chart2[$d][6] = "Absent";
-				echo "<tr><td>".$chart2[$d][0]."</td><td>".$chart2[$d][1]."</td><td>".$chart2[$d][2]."</td><td>".$chart2[$d][3]."</td><td>".$chart2[$d][4]."</td><td>".$chart2[$d][5]."</td><td>".$chart2[$d][6]."</td></tr>";
-				
+
 
                 $chart[$d][10] = array($chart2[$d][0], $chart2[$d][1], $chart2[$d][2], $chart2[$d][3], $chart2[$d][4], $chart2[$d][5], $chart2[$d][6]);
                 }
@@ -533,7 +538,7 @@ function report($con, $rollno, $c_id, $from, $till, $type ,$schedule , $holid , 
             
             $date = date("Y-m-d", strtotime("+1 day", strtotime($date)));
         }//while loop ends
-        echo "</table>";
+        
         print_chart($chart, $from, $till, $type, $holid);
     }//present day ends
 
@@ -666,7 +671,7 @@ function db_connect() {
     $host = "localhost";
     $user = "root";
     $pass = "";
-    $db = "new";
+    $db = "athena";
     $con = mysqli_connect($host, $user, $pass, $db);
 
     if (mysqli_connect_errno()) 
@@ -682,7 +687,7 @@ function alter_db_connect() {
     $host = "localhost";
     $user = "root";
     $pass = "";
-    $db = "new_fpa";
+    $db = "athena";
 
     mysql_connect($host, $user, $pass) or die(mysql_error());
     mysql_select_db($db) or die(mysql_error());
